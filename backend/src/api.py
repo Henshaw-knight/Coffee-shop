@@ -28,7 +28,25 @@ CORS(app)
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks')
+def get_drinks():
+    try:
+        drink_list = Drink.query.all()
+        drinks = []
+        for drink in drink_list:
+            drink = drink.short()
+            drinks.append()
 
+        return jsonify({
+            'success': True,
+            'drinks': drinks
+        }), 200
+
+    except:
+        return jsonify({
+            'success': False,            
+        }), 500           
+    # return 'Access Granted'  
 
 '''
 @TODO implement endpoint
@@ -39,6 +57,22 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks-detail')
+@requires_auth('get:drinks-detail')
+def get_drink_detail(payload):
+    try:
+        drink_list = Drink.query.all() 
+        drinks = [drink.long() for drink in drink_list]
+
+        return jsonify({
+            'success': True,
+            'drinks': drinks
+        }), 200
+
+    except:
+        return jsonify({
+            'success': False
+        }), 500    
 
 '''
 @TODO implement endpoint
@@ -50,6 +84,36 @@ CORS(app)
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks', methods=['POST'])
+@requires_auth('post:drinks')
+def post_drink(payload):
+    data = request.get_json() 
+    title = data.get('title')
+    recipe = data.get('recipe')
+
+    if type(recipe) != str:
+        recipe = json.dumps(recipe)
+
+    drink = Drink(title=title, recipe=recipe)
+    drink.insert()
+    
+    return jsonify({
+        'success': True,
+        'drinks': [drink.long()]
+    }), 200
+
+    # try:         
+    #     drinks = [drink.long() for drink in drink_list]
+
+    #     return jsonify({
+    #         'success': True,
+    #         'drinks': drinks
+    #     }), 200
+
+    # except:
+    #     return jsonify({
+    #         'success': False
+    #     }), 500    
 
 '''
 @TODO implement endpoint
