@@ -127,6 +127,39 @@ def post_drink(payload):
         or appropriate status code indicating reason for failure
 '''
 
+@app.route('/drinks/<id>', methods=['POST'])
+@requires_auth('patch:drinks')
+def edit_drink(payload, id):
+    data = request.get_json()     
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
+
+    if drink is None:
+        return jsonify({
+            'success': False,
+            'message': 'Drink not found'
+        }), 404
+    try:
+        title = data.get('title')
+        recipe = data.get('recipe')
+
+        if title:
+            drink.title = title
+
+        if recipe:
+            if type(recipe) != str:
+                recipe = json.dumps(recipe)
+            drink.recipe = recipe          
+        
+        drink.update()       
+        return jsonify({
+            'success': True,
+            'drinks': [drink.long()]
+        }), 200
+    except:
+        # return jsonify({
+        #     'success': False,            
+        # }), 400
+        abort(400)
 
 '''
 @TODO implement endpoint
