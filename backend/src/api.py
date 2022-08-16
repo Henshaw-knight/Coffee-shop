@@ -127,7 +127,7 @@ def post_drink(payload):
         or appropriate status code indicating reason for failure
 '''
 
-@app.route('/drinks/<id>', methods=['POST'])
+@app.route('/drinks/<id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def edit_drink(payload, id):
     data = request.get_json()     
@@ -144,7 +144,6 @@ def edit_drink(payload, id):
 
         if title:
             drink.title = title
-
         if recipe:
             if type(recipe) != str:
                 recipe = json.dumps(recipe)
@@ -171,6 +170,23 @@ def edit_drink(payload, id):
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
+@app.route('/drinks/<id>', methods=['POST'])
+@requires_auth('delete:drinks')
+def delete_drink(payload, id):        
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
+    if drink is None:
+        return jsonify({
+            'success': False,
+            'message': 'Drink not found'
+        }), 404
+    
+    drink.delete()       
+    return jsonify({
+        'success': True,
+        'deleted': id
+        'message': 'Drink successfully deleted!'
+    }), 200
+    
 
 
 # Error Handling
@@ -203,9 +219,66 @@ def unprocessable(error):
 @TODO implement error handler for 404
     error handler should conform to general task above
 '''
+@app.errorhandler(404)
+def not_found(error):
+    return (
+        jsonify({
+        "success": False,
+        "error": 404,
+        "message": "resource not found"
+        }), 404
+    )
 
+@app.errorhandler(422)
+def unprocessable(error):
+    return (
+        jsonify({
+            "success": False,
+            "error": 422, 
+            "message": "unprocessable"
+        }), 422
+    )
+
+@app.errorhandler(400)
+def bad_request(error):
+    return (
+        jsonify({
+            "success": False, 
+            "error": 400, 
+            "message": "bad request"
+        }), 400
+    )
+
+@app.errorhandler(405)
+def unallowable_method(error):
+    return (
+        jsonify({
+            "success": False, 
+            "error": 405, 
+            "message": "method not allowed"
+        }), 405,
+    )
+
+@app.errorhandler(500)
+def server_error(error):
+    return (
+        jsonify({
+            "success": False,
+            "error": 500,
+            "message": "Internal server error"
+        }), 500
+    )
 
 '''
 @TODO implement error handler for AuthError
     error handler should conform to general task above
 '''
+@app.errorhandler(AuthError)
+def auth_error_handler(error):
+    return (
+        jsonify({
+            "success": False,
+            "error": error.status_code,
+            "message": error.error['description']
+        }), error.status_code
+    )
